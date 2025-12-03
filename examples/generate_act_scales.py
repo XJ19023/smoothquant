@@ -20,7 +20,7 @@ def build_model_and_tokenizer(model_name):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--model-name", type=str, default="facebook/opt-1.3b", help="model name"
+        "--model_name", type=str, default="facebook/opt-1.3b", help="model name"
     )
     parser.add_argument(
         "--output-path",
@@ -43,7 +43,9 @@ def parse_args():
 @torch.no_grad()
 def main():
     args = parse_args()
-    model, tokenizer = build_model_and_tokenizer(args.model_name)
+    model_path = f'/localssd/lbxj/{args.model_name}'
+    args.output_path = f'act_scales/{args.model_name}.pt'
+    model, tokenizer = build_model_and_tokenizer(model_path)
 
     if not os.path.exists(args.dataset_path):
         print(f"Cannot find the dataset at {args.dataset_path}")

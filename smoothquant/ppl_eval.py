@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -11,7 +12,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--alpha", type=float, default=0.5)
-parser.add_argument("--model_path", type=str, default="meta-llama/Llama-2-7b-hf")
+parser.add_argument("--model_name", type=str, default="meta-llama/Llama-2-7b-hf")
 parser.add_argument(
     "--act_scales_path",
     type=str,
@@ -24,8 +25,8 @@ parser.add_argument("--quantize", action="store_true")
 
 args = parser.parse_args()
 alpha = args.alpha
-model_path = args.model_path
-act_scales_path = args.act_scales_path
+model_path = f'/localssd/lbxj/{args.model_name}'
+act_scales_path = f'act_scales/{args.model_name}.pt'
 n_samples = args.n_samples
 
 
@@ -83,3 +84,8 @@ if args.quantize:
 
 ppl = evaluator.evaluate(model)
 print(f"Perplexity: {ppl}")
+os.makedirs(f'log/{args.model_name}', exist_ok=True)
+
+
+with open(f'log/{args.model_name}/ppl.txt', 'a') as f:
+    f.writelines(f'ppl: {ppl:.6f}\n')
