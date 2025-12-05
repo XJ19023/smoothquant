@@ -1,3 +1,4 @@
+import functools
 import os
 import torch
 import torch.nn as nn
@@ -21,6 +22,7 @@ parser.add_argument(
 parser.add_argument("--n_samples", type=int, default=None)
 parser.add_argument("--smooth", action="store_true")
 parser.add_argument("--quantize", action="store_true")
+parser.add_argument("--hook", action="store_true")
 
 
 args = parser.parse_args()
@@ -29,6 +31,10 @@ model_path = f'/localssd/lbxj/{args.model_name}'
 act_scales_path = f'act_scales/{args.model_name}.pt'
 n_samples = args.n_samples
 
+def stat_input_hook(module, x, y, name):
+    if isinstance(x, tuple):
+        x = x[0]
+    print(f'{name[21:]:<25} W: {module.weight.shape} A: {x.shape}')
 
 class Evaluator:
     def __init__(self, dataset, tokenizer, device, n_samples=40):
@@ -71,6 +77,14 @@ model = AutoModelForCausalLM.from_pretrained(
     model_path, torch_dtype=torch.bfloat16, device_map="auto"
 )
 
+if args.hook:
+    hooks = []
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            hooks.append(
+                module.register_forward_hook(functools.partial(stat_input_hook, name=name))
+            )
+        
 if args.smooth:
     act_scales = torch.load(act_scales_path)
     smooth_lm(model, act_scales, alpha)

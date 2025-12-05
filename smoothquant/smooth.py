@@ -16,7 +16,7 @@ from transformers.models.falcon.modeling_falcon import FalconDecoderLayer
 
 
 @torch.no_grad()
-def smooth_ln_fcs(ln, fcs, act_scales, alpha=0.5):
+def smooth_ln_fcs(ln, fcs, act_scales, alpha=0.5): # act_scales: (in_features,)
     if not isinstance(fcs, list):
         fcs = [fcs]
     assert isinstance(ln, nn.LayerNorm)
@@ -28,8 +28,8 @@ def smooth_ln_fcs(ln, fcs, act_scales, alpha=0.5):
     act_scales = act_scales.to(device=device, dtype=dtype)
     weight_scales = torch.cat(
         [fc.weight.abs().max(dim=0, keepdim=True)[0] for fc in fcs], dim=0
-    )
-    weight_scales = weight_scales.max(dim=0)[0].clamp(min=1e-5)
+    ) # (out_features, in_features) --> (num_fcs, in_features)
+    weight_scales = weight_scales.max(dim=0)[0].clamp(min=1e-5) # (num_fcs, in_features) --> (in_features,)
 
     scales = (
         (act_scales.pow(alpha) / weight_scales.pow(1 - alpha))
@@ -42,7 +42,7 @@ def smooth_ln_fcs(ln, fcs, act_scales, alpha=0.5):
     ln.bias.div_(scales)
 
     for fc in fcs:
-        fc.weight.mul_(scales.view(1, -1))
+        fc.weight.mul_(scales.view(1, -1)) # [3072, 768] * [1, 768] --> [3072, 768], 广播为相同形状后逐元素相乘
 
 
 @torch.no_grad()
@@ -82,7 +82,7 @@ def smooth_lm(model, scales, alpha=0.5):
                 module.self_attn.v_proj,
             ]
             qkv_input_scales = scales[name + ".self_attn.q_proj"]
-            smooth_ln_fcs(attn_ln, qkv, qkv_input_scales, alpha)
+            # smooth_ln_fcs(attn_ln, qkv, qkv_input_scales, alpha)
 
             ffn_ln = module.final_layer_norm
             fc1 = module.fc1

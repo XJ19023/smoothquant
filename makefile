@@ -19,6 +19,23 @@ ppl:
 	hours=$$((delta / 3600)); \
 	minutes=$$(((delta % 3600) / 60)); \
 	echo "\e[36mTime elapsed: $${hours}h-$${minutes}m\e[0m"
+org:
+	@methods="--eval_clamp --eval_clamp_qwt --wgt_nbit=4 --act_nbit=8"; \
+	methods="--eval_base --wgt_nbit=4 --act_nbit=8"; \
+	models="TinyLlama-1.1B-Chat-v1.0 llama-2-7b-hf Qwen2.5-7B"; \
+	models="opt-125m"; \
+	tasks="wikitext"; \
+	start=$$(date +%s); \
+	for model in $$models; do \
+		for task in $$tasks; do \
+			CUDA_VISIBLE_DEVICES=0 python smoothquant/ppl_eval.py --model_name=$$model --hook --n_samples=1; \
+		done; \
+	done; \
+	end=$$(date +%s); \
+	delta=$$((end - start)); \
+	hours=$$((delta / 3600)); \
+	minutes=$$(((delta % 3600) / 60)); \
+	echo "\e[36mTime elapsed: $${hours}h-$${minutes}m\e[0m"
 scale:
 	@methods="--eval_clamp --eval_clamp_qwt --wgt_nbit=4 --act_nbit=8"; \
 	methods="--eval_base --wgt_nbit=4 --act_nbit=8"; \
